@@ -11,7 +11,7 @@ optdepends=('libayatana-appindicator: system tray support')
 provides=('binder')
 conflicts=('binder')
 options=('!strip')
-source=("${pkgname}-${pkgver}.AppImage::https://github.com/tcraid0/binder-app/releases/download/v${pkgver}/binder_${pkgver}_amd64.AppImage"
+source=("${pkgname}-${pkgver}.AppImage::https://github.com/tcraid0/binder-app/releases/download/v${pkgver}/Binder_${pkgver}_amd64.AppImage"
         "LICENSE-${pkgver}::https://raw.githubusercontent.com/tcraid0/binder-app/v${pkgver}/LICENSE")
 sha256sums=('SKIP'
             'SKIP')

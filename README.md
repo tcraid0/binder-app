@@ -28,7 +28,7 @@ Built with Tauri v2, React 19, TypeScript, and Tailwind CSS v4. Linux target (Ap
 Download the `.deb` from the [latest release](https://github.com/tcraid0/binder-app/releases/latest) and install:
 
 ```bash
-sudo dpkg -i binder_*_amd64.deb
+sudo dpkg -i Binder_*_amd64.deb
 ```
 
 ### Arch Linux
@@ -44,8 +44,8 @@ makepkg -si
 Option 2 — run the AppImage directly:
 
 ```bash
-chmod +x binder_*_amd64.AppImage
-./binder_*_amd64.AppImage
+chmod +x Binder_*_amd64.AppImage
+./Binder_*_amd64.AppImage
 ```
 
 If the AppImage fails with a FUSE error, install `fuse2`:
@@ -57,7 +57,7 @@ sudo pacman -S fuse2
 Or bypass FUSE entirely:
 
 ```bash
-./binder_*_amd64.AppImage --appimage-extract-and-run
+./Binder_*_amd64.AppImage --appimage-extract-and-run
 ```
 
 ### AppImage (any distro)
@@ -65,8 +65,8 @@ Or bypass FUSE entirely:
 Download the `.AppImage` from the [latest release](https://github.com/tcraid0/binder-app/releases/latest), make it executable, and run:
 
 ```bash
-chmod +x binder_*_amd64.AppImage
-./binder_*_amd64.AppImage
+chmod +x Binder_*_amd64.AppImage
+./Binder_*_amd64.AppImage
 ```
 
 If it fails with a FUSE error, install FUSE 2 for your distro (e.g. `sudo apt install libfuse2` on Debian/Ubuntu, `sudo pacman -S fuse2` on Arch).
