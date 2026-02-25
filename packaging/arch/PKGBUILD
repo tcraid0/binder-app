@@ -23,17 +23,19 @@ prepare() {
 
 package() {
     install -Dm755 "${srcdir}/squashfs-root/usr/bin/binder" "${pkgdir}/usr/bin/binder"
-    install -Dm644 "${srcdir}/squashfs-root/usr/share/applications/binder.desktop" "${pkgdir}/usr/share/applications/binder.desktop"
 
-    for size in 32x32 64x64 128x128 256x256; do
-        icon="${srcdir}/squashfs-root/usr/share/icons/hicolor/${size}/apps/binder.png"
-        if [ -f "$icon" ]; then
-            install -Dm644 "$icon" "${pkgdir}/usr/share/icons/hicolor/${size}/apps/binder.png"
-        fi
+    # Desktop file is capitalized in the AppImage
+    install -Dm644 "${srcdir}/squashfs-root/usr/share/applications/Binder.desktop" \
+        "${pkgdir}/usr/share/applications/binder.desktop"
+
+    for size in 32x32 128x128; do
+        install -Dm644 "${srcdir}/squashfs-root/usr/share/icons/hicolor/${size}/apps/binder.png" \
+            "${pkgdir}/usr/share/icons/hicolor/${size}/apps/binder.png"
     done
 
-    install -Dm644 "${srcdir}/squashfs-root/usr/share/icons/hicolor/128x128@2x/apps/binder.png" \
-        "${pkgdir}/usr/share/icons/hicolor/128x128@2x/apps/binder.png" 2>/dev/null || true
+    # HiDPI icon
+    install -Dm644 "${srcdir}/squashfs-root/usr/share/icons/hicolor/256x256@2/apps/binder.png" \
+        "${pkgdir}/usr/share/icons/hicolor/256x256@2/apps/binder.png"
 
     install -Dm644 "${srcdir}/LICENSE-${pkgver}" "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 }
