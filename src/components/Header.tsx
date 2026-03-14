@@ -3,8 +3,6 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath } from "@tauri-apps/plugin-opener";
 import type { Theme, FileType } from "../types";
-import type { ReadingStats } from "../lib/reading-stats";
-import { formatWordCount } from "../lib/reading-stats";
 import { useToast } from "./ToastProvider";
 
 interface HeaderProps {
@@ -25,7 +23,7 @@ interface HeaderProps {
   isSavedFlash: boolean;
   onToggleEdit: () => void;
   onSave: () => void;
-  readingStats: ReadingStats | null;
+  statsSummary: string | null;
   progressTextRef: React.RefObject<HTMLSpanElement | null>;
   onToggleAnnotations: () => void;
   hasAnnotations: boolean;
@@ -59,7 +57,7 @@ function HeaderComponent({
   isSavedFlash,
   onToggleEdit,
   onSave,
-  readingStats,
+  statsSummary,
   progressTextRef,
   onToggleAnnotations,
   hasAnnotations,
@@ -297,13 +295,11 @@ ${bodyHtml}
             <span className="text-sm text-text-muted truncate max-w-[400px]">
               {fileName}
             </span>
-            {readingStats && !isEditing && (
+            {statsSummary && !isEditing && (
               <span className="text-[11px] text-text-muted shrink-0 hidden sm:inline">
                 <span ref={progressTextRef} className="inline-block min-w-[2.5ch] text-right">0%</span>
                 {" · "}
-                {readingStats.pageCount != null
-                  ? `~${readingStats.pageCount} pg · ${formatWordCount(readingStats.wordCount)} words`
-                  : `${formatWordCount(readingStats.wordCount)} words · ${readingStats.readingTimeMinutes} min`}
+                {statsSummary}
               </span>
             )}
             <button

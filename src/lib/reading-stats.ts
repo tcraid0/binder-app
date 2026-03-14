@@ -4,6 +4,11 @@ export interface ReadingStats {
   pageCount?: number;
 }
 
+interface FormatReadingStatsSummaryOptions {
+  pageCount?: number | null;
+  runtimeMinutes?: number | null;
+}
+
 const WORDS_PER_MINUTE = 230;
 
 /**
@@ -40,4 +45,18 @@ export function computeReadingStats(content: string, fileType?: string): Reading
 
 export function formatWordCount(count: number): string {
   return count.toLocaleString();
+}
+
+export function formatReadingStatsSummary(
+  stats: ReadingStats,
+  options: FormatReadingStatsSummaryOptions = {},
+): string {
+  const pageCount = options.pageCount ?? stats.pageCount ?? null;
+  const runtimeMinutes = options.runtimeMinutes ?? null;
+
+  if (pageCount != null) {
+    return `~${pageCount} pg${runtimeMinutes != null ? ` · ~${runtimeMinutes} min` : ""} · ${formatWordCount(stats.wordCount)} words`;
+  }
+
+  return `${formatWordCount(stats.wordCount)} words · ${stats.readingTimeMinutes} min`;
 }

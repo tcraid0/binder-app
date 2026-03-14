@@ -15,7 +15,7 @@ import { ShortcutOverlay } from "./components/ShortcutOverlay";
 import { FocusBar } from "./components/FocusBar";
 import { SearchBar } from "./components/SearchBar";
 import { FountainRenderer } from "./components/FountainRenderer";
-import { parseFountain, extractCharacters } from "./lib/fountain";
+import { parseFountain, extractCharacters, computeScriptStats } from "./lib/fountain";
 import { MarkdownEditor } from "./components/MarkdownEditor";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { HighlightToolbar } from "./components/HighlightToolbar";
@@ -43,7 +43,7 @@ import { useWorkspaceSearch } from "./hooks/useWorkspaceSearch";
 import { useWorkspaceInsights } from "./hooks/useWorkspaceInsights";
 import { HEADER_HEIGHT_PX, HEADING_SCROLL_MARGIN_PX } from "./lib/scroll-constants";
 import { toPathIdentityKey } from "./lib/paths";
-import { computeReadingStats } from "./lib/reading-stats";
+import { computeReadingStats, formatReadingStatsSummary } from "./lib/reading-stats";
 import { findAnchor, wrapRange, clearAnnotationHighlights } from "./lib/text-anchoring";
 import { applyPrintState } from "./lib/print-state";
 import { createPrintCleanupController, preparePrintDocument } from "./lib/print-export";
@@ -51,10 +51,10 @@ import { useToast } from "./components/ToastProvider";
 import { storeGet, storeSet } from "./lib/store";
 import { signalAppReady } from "./lib/app-ready";
 import type { TextAnchor } from "./lib/text-anchoring";
-import type { HighlightColor, SceneItem, WorkspaceSearchHit } from "./types";
+import type { HighlightColor, SceneItem, ScriptSceneStats, WorkspaceSearchHit } from "./types";
 import welcomeContent from "./assets/welcome.md?raw";
 
-const SCENE_HEADING_RE = /^(?:INT\.|EXT\.|INT\/EXT\.|EST\.)\s+/i;
+const SCENE_HEADING_RE = /^(?:INT\.|EXT\.|INT\/EXT\.|I\.?\/E\.?|EST\.)\s+/i;
 
 type PendingAction =
   | { kind: "close-window" }
@@ -581,6 +581,29 @@ function App() {
     if (!parsedFountain) return [];
     return extractCharacters(parsedFountain);
   }, [parsedFountain]);
+
+  const scriptStats = useMemo(() => {
+    if (!parsedFountain) return null;
+    return computeScriptStats(parsedFountain);
+  }, [parsedFountain]);
+
+  const sceneStatsByHeadingId = useMemo<Record<string, ScriptSceneStats>>(() => {
+    if (!scriptStats) return {};
+    return Object.fromEntries(scriptStats.scenes.map((scene) => [scene.sceneId, scene]));
+  }, [scriptStats]);
+
+  const statsSummary = useMemo(() => {
+    if (!readingStats) return null;
+
+    if (fileType === "fountain" && scriptStats) {
+      return formatReadingStatsSummary(readingStats, {
+        pageCount: scriptStats.totalPages,
+        runtimeMinutes: scriptStats.estimatedRuntimeMinutes,
+      });
+    }
+
+    return formatReadingStatsSummary(readingStats);
+  }, [fileType, readingStats, scriptStats]);
 
   // Clear focused character when file changes
   const prevFilePathRef = useRef(filePath);
@@ -1346,7 +1369,7 @@ function App() {
           isSavedFlash={savedFlash}
           onToggleEdit={toggleEditMode}
           onSave={handleSave}
-          readingStats={readingStats}
+          statsSummary={statsSummary}
           progressTextRef={progressTextRef}
           onToggleAnnotations={toggleAnnotationsPanel}
           hasAnnotations={highlights.length > 0 || bookmarks.length > 0}
@@ -1451,7 +1474,9 @@ function App() {
           headings={headings}
           activeId={activeHeadingId}
           scenes={sceneItems}
+          sceneStatsByHeadingId={sceneStatsByHeadingId}
           characters={characters}
+          scriptCharacters={fileType === "fountain" ? scriptStats?.characters ?? [] : []}
           focusedCharacter={focusedCharacter}
           onToggleCharacterFocus={handleToggleCharacterFocus}
           isBookmarked={isBookmarked}
@@ -1494,7 +1519,15 @@ function App() {
           onHighlight={handleHighlight}
         />
       )}
-      {focusMode && <FocusBar fileName={fileName} onExit={exitFocusMode} readingStats={readingStats} progressTextRef={progressTextRef} reducedEffects={settings.reducedEffects} />}
+      {focusMode && (
+        <FocusBar
+          fileName={fileName}
+          onExit={exitFocusMode}
+          statsSummary={statsSummary}
+          progressTextRef={progressTextRef}
+          reducedEffects={settings.reducedEffects}
+        />
+      )}
       {focusedCharacter && fileType === "fountain" && !focusMode && !presentationMode && (
         <div
           role="status"

@@ -104,6 +104,20 @@ test("buildWorkspaceDoc falls back to filename when fountain title is missing", 
   assert.equal(doc.title, "no-title");
 });
 
+test("buildWorkspaceDoc treats bare I/E markdown headings as scenes", () => {
+  const content = [
+    "# I/E CAR - DAY",
+    "",
+    "Still moving.",
+  ].join("\n");
+
+  const doc = buildWorkspaceDoc(makeMeta("outline.md"), content);
+
+  assert.equal(doc.scenes.length, 1);
+  assert.equal(doc.scenes[0].label, "I/E CAR - DAY");
+  assert.equal(doc.scenes[0].headingId, doc.headings[0].id);
+});
+
 test("normalizeCharacterName strips V.O., O.S., CONT'D extensions", () => {
   assert.equal(normalizeCharacterName("SARAH (V.O.)"), "SARAH");
   assert.equal(normalizeCharacterName("JOHN (O.S.)"), "JOHN");

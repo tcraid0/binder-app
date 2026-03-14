@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const {
   computeReadingStats,
+  formatReadingStatsSummary,
   formatWordCount,
 } = require("../.tmp/workspace-tests/src/lib/reading-stats.js");
 
@@ -42,4 +43,29 @@ test("computeReadingStats rounds page count correctly", () => {
   const words2 = Array(190).fill("word").join(" ");
   const stats2 = computeReadingStats(words2, "fountain");
   assert.equal(stats2.pageCount, 1);
+});
+
+test("formatReadingStatsSummary uses screenplay page and runtime overrides when provided", () => {
+  const stats = {
+    wordCount: 480,
+    readingTimeMinutes: 2,
+    pageCount: 2,
+  };
+
+  assert.equal(
+    formatReadingStatsSummary(stats, { pageCount: 3, runtimeMinutes: 3 }),
+    "~3 pg · ~3 min · 480 words",
+  );
+});
+
+test("formatReadingStatsSummary falls back to default reading stats output", () => {
+  const stats = {
+    wordCount: 500,
+    readingTimeMinutes: 2,
+  };
+
+  assert.equal(
+    formatReadingStatsSummary(stats),
+    "500 words · 2 min",
+  );
 });

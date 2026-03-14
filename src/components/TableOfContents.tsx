@@ -1,5 +1,11 @@
 import { memo, useCallback, useEffect, useRef } from "react";
-import type { CharacterInfo, HeadingItem, SceneItem } from "../types";
+import type {
+  CharacterInfo,
+  HeadingItem,
+  SceneItem,
+  ScriptCharacterStats,
+  ScriptSceneStats,
+} from "../types";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 
 interface TableOfContentsProps {
@@ -8,6 +14,8 @@ interface TableOfContentsProps {
   activeId: string | null;
   scenes?: SceneItem[];
   characters?: CharacterInfo[];
+  sceneStatsByHeadingId?: Record<string, ScriptSceneStats>;
+  scriptCharacters?: ScriptCharacterStats[];
   focusedCharacter?: string | null;
   onToggleCharacterFocus?: (name: string) => void;
   isBookmarked?: (headingId: string) => boolean;
@@ -25,6 +33,20 @@ const indentByLevel: Record<number, string> = {
 };
 
 const TOC_AUTO_SCROLL_PADDING_PX = 10;
+
+function formatCompactWordCount(count: number): string {
+  if (count >= 1000) {
+    const compact = Math.round((count / 1000) * 10) / 10;
+    return `${compact}k words`;
+  }
+  return `${count} words`;
+}
+
+function isScriptCharacterStats(
+  value: CharacterInfo | ScriptCharacterStats,
+): value is ScriptCharacterStats {
+  return "dialogueWordCount" in value;
+}
 
 interface TOCItemProps {
   heading: HeadingItem;
@@ -87,6 +109,8 @@ function TableOfContentsComponent({
   activeId,
   scenes = [],
   characters = [],
+  sceneStatsByHeadingId = {},
+  scriptCharacters = [],
   focusedCharacter,
   onToggleCharacterFocus,
   isBookmarked,
@@ -169,33 +193,60 @@ function TableOfContentsComponent({
                   onClick={() => onOpenScene?.(scene)}
                   className="w-full text-left px-2 py-1 rounded text-xs text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
                 >
-                  <span className="block truncate">{scene.label}</span>
+                  {scene.headingId && sceneStatsByHeadingId[scene.headingId]?.parsed.intExt && (
+                    <span className="inline-block mr-1.5 rounded border border-border px-1 py-0 text-[9px] font-medium uppercase tracking-wide text-text-muted">
+                      {sceneStatsByHeadingId[scene.headingId]?.parsed.intExt}
+                    </span>
+                  )}
+                  <span className="inline-flex w-full items-baseline gap-2">
+                    <span className="truncate">{scene.label}</span>
+                    {scene.headingId && sceneStatsByHeadingId[scene.headingId] && (
+                      <span className="ml-auto shrink-0 text-text-muted">
+                        ~{sceneStatsByHeadingId[scene.headingId].pageEstimate.toFixed(1)} pg
+                      </span>
+                    )}
+                  </span>
                 </button>
               </li>
             ))}
           </ul>
         </div>
       )}
-      {characters.length > 0 && (
+      {(scriptCharacters.length > 0 || characters.length > 0) && (
         <div className="px-4 pb-3">
           <h3 className="ui-subsection-label mb-1.5">Characters</h3>
           <ul className="space-y-0.5">
-            {characters.map((char) => (
-              <li key={char.name}>
-                <button
-                  type="button"
-                  onClick={() => onToggleCharacterFocus?.(char.name)}
-                  className={`w-full text-left px-2 py-1 rounded text-xs flex items-center gap-1 transition-colors ${
-                    focusedCharacter === char.name
-                      ? "bg-accent/15 text-accent font-medium"
-                      : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
-                  }`}
-                >
-                  <span className="truncate">{char.name}</span>
-                  <span className="text-text-muted shrink-0 ml-auto">{char.dialogueCount}</span>
-                </button>
-              </li>
-            ))}
+            {(scriptCharacters.length > 0 ? scriptCharacters : characters).map((char) => {
+              const isScriptCharacter = isScriptCharacterStats(char);
+
+              return (
+                <li key={char.name}>
+                  <button
+                    type="button"
+                    onClick={() => onToggleCharacterFocus?.(char.name)}
+                    className={`w-full text-left px-2 py-1 rounded text-xs flex items-start gap-1 transition-colors ${
+                      focusedCharacter === char.name
+                        ? "bg-accent/15 text-accent font-medium"
+                        : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{char.name}</span>
+                      {isScriptCharacter && char.speakingTimeMinutes > 0 && (
+                        <span className="block text-[10px] text-text-muted">
+                          ~{char.speakingTimeMinutes.toFixed(1)} min
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-text-muted shrink-0 ml-auto">
+                      {isScriptCharacter
+                        ? formatCompactWordCount(char.dialogueWordCount)
+                        : char.dialogueCount}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

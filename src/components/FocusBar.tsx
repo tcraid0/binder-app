@@ -1,18 +1,16 @@
 import { memo, useState, useEffect, useRef } from "react";
-import type { ReadingStats } from "../lib/reading-stats";
-import { formatWordCount } from "../lib/reading-stats";
 
 interface FocusBarProps {
   fileName: string | null;
   onExit: () => void;
-  readingStats: ReadingStats | null;
+  statsSummary: string | null;
   progressTextRef: React.RefObject<HTMLSpanElement | null>;
   reducedEffects: boolean;
 }
 
 const PROXIMITY_PX = 60;
 
-function FocusBarComponent({ fileName, onExit, readingStats, progressTextRef, reducedEffects }: FocusBarProps) {
+function FocusBarComponent({ fileName, onExit, statsSummary, progressTextRef, reducedEffects }: FocusBarProps) {
   const [nearTop, setNearTop] = useState(false);
   const rafRef = useRef<number | null>(null);
 
@@ -62,12 +60,10 @@ function FocusBarComponent({ fileName, onExit, readingStats, progressTextRef, re
       {fileName && (
         <span className="text-sm text-text-muted truncate max-w-[280px]">{fileName}</span>
       )}
-      {readingStats && (
+      {statsSummary && (
         <span className="text-[11px] text-text-muted">
           <span ref={progressTextRef}>0%</span>
-          {" · "}{readingStats.pageCount != null
-            ? `~${readingStats.pageCount} pg · ${formatWordCount(readingStats.wordCount)} words`
-            : `${formatWordCount(readingStats.wordCount)} words · ${readingStats.readingTimeMinutes} min`}
+          {" · "}{statsSummary}
         </span>
       )}
       <button

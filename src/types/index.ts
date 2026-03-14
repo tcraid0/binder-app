@@ -130,6 +130,41 @@ export interface CharacterInfo {
   firstSceneId: string | null;
 }
 
+export interface ParsedSceneHeading {
+  intExt: "INT" | "EXT" | "INT/EXT" | null;
+  location: string;
+  timeOfDay: string | null;
+}
+
+export interface ScriptSceneStats {
+  sceneId: string;
+  heading: string;
+  parsed: ParsedSceneHeading;
+  wordCount: number;
+  pageEstimate: number;
+  characterNames: string[];
+}
+
+export interface ScriptCharacterStats {
+  name: string;
+  dialogueCount: number;
+  dialogueWordCount: number;
+  speakingTimeMinutes: number;
+  sceneCount: number;
+  firstSceneId: string | null;
+  lastSceneId: string | null;
+}
+
+export interface ScriptStats {
+  totalPages: number;
+  estimatedRuntimeMinutes: number;
+  speakingCharacterCount: number;
+  uniqueLocationCount: number;
+  dialoguePercentage: number;
+  scenes: ScriptSceneStats[];
+  characters: ScriptCharacterStats[];
+}
+
 export interface WorkspaceDocIndex {
   path: string;
   relPath: string;

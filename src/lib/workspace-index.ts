@@ -10,7 +10,7 @@ import { parseFountain, fountainToSearchableText } from "./fountain";
 import { resolveMarkdownLink, toPathIdentityKey } from "./paths";
 
 const MAX_BODY_TEXT_CHARS = 30_000;
-const SCENE_RE = /^(?:INT\.|EXT\.|INT\/EXT\.|EST\.)\s+/i;
+const SCENE_RE = /^(?:INT\.|EXT\.|INT\/EXT\.|I\.?\/E\.?|EST\.)\s+/i;
 
 interface HeadingWithLine extends WorkspaceHeading {
   line: number;
