@@ -83,6 +83,7 @@ function getMermaidThemeConfig(themeName: string) {
       startOnLoad: false,
       theme: "base" as const,
       themeVariables,
+      flowchart: { useMaxWidth: false },
       securityLevel: "strict" as const,
       fontFamily,
     },

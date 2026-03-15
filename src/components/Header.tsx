@@ -3,6 +3,8 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath } from "@tauri-apps/plugin-opener";
 import type { Theme, FileType } from "../types";
+import { buildExportHtml } from "../lib/export-html";
+import { waitForMermaidDiagrams } from "../lib/print-export";
 import { useToast } from "./ToastProvider";
 
 interface HeaderProps {
@@ -38,6 +40,19 @@ const themeLabels: Record<Theme, string> = {
   dark: "Dark",
   "deep-dark": "Midnight",
 };
+
+const EXPORT_CSS_VAR_NAMES = [
+  "--bg-primary",
+  "--bg-secondary",
+  "--bg-tertiary",
+  "--text-primary",
+  "--text-secondary",
+  "--text-muted",
+  "--accent",
+  "--accent-hover",
+  "--border",
+  "--code-bg",
+];
 
 function HeaderComponent({
   fileName,
@@ -117,116 +132,40 @@ function HeaderComponent({
     if (!el) return;
 
     const defaultName = fileName ? fileName.replace(/\.(md|markdown|fountain)$/i, ".html") : "export.html";
-    const savePath = await save({
-      defaultPath: defaultName,
-      filters: [{ name: "HTML", extensions: ["html"] }],
-    });
-    if (!savePath) return;
-
-    const themeAttr = document.documentElement.getAttribute("data-theme") || "light";
-    const computedStyles = getComputedStyle(document.documentElement);
-    const cssVars = [
-      "--bg-primary", "--bg-secondary", "--bg-tertiary",
-      "--text-primary", "--text-secondary", "--text-muted",
-      "--accent", "--accent-hover", "--border", "--code-bg",
-    ].map((v) => `${v}: ${computedStyles.getPropertyValue(v)};`).join("\n      ");
-
-    const bodyHtml = el.innerHTML;
-    const safeTitle = (fileName || "Exported Document").replace(/[&<>"']/g, (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] || c
-    );
-    const html = `<!DOCTYPE html>
-<html lang="en" data-theme="${themeAttr}">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${safeTitle}</title>
-  <style>
-    :root {
-      ${cssVars}
-    }
-    body {
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 17px;
-      line-height: 1.7;
-      color: var(--text-primary);
-      background: var(--bg-primary);
-      max-width: 65ch;
-      margin: 0 auto;
-      padding: 48px 24px 80px;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      font-family: system-ui, -apple-system, sans-serif;
-      color: var(--text-primary);
-      margin-top: 2.5em;
-      margin-bottom: 0.75em;
-    }
-    h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; margin-top: 0; padding-bottom: 0.5em; border-bottom: 1px solid var(--border); }
-    h2 { font-size: 1.625rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
-    h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
-    h4 { font-size: 1.125rem; font-weight: 600; }
-    h5, h6 { font-size: 1rem; font-weight: 600; }
-    h6 { color: var(--text-secondary); }
-    p { margin-top: 0; margin-bottom: 1.25em; }
-    a { color: var(--accent); }
-    blockquote { margin: 1.5em 0; padding: 0.5em 1.25em; border-left: 3px solid var(--accent); background: var(--bg-secondary); border-radius: 0 6px 6px 0; color: var(--text-secondary); }
-    blockquote p:last-child { margin-bottom: 0; }
-    ul, ol { margin: 1em 0; padding-left: 1.75em; }
-    li { margin-bottom: 0.35em; }
-    hr { border: none; height: 1px; background: var(--border); margin: 2.5em 0; }
-    table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 0.9em; }
-    th { font-family: system-ui, sans-serif; font-weight: 600; text-align: left; padding: 0.75em 1em; border-bottom: 2px solid var(--border); }
-    td { padding: 0.6em 1em; border-bottom: 1px solid var(--border); }
-    code:not(pre code) { font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.15em 0.4em; background: var(--code-bg); border-radius: 4px; }
-    pre { margin: 1.5em 0; padding: 20px; background: var(--code-bg); border-radius: 10px; border-left: 3px solid var(--accent); overflow-x: auto; }
-    pre code { font-family: ui-monospace, monospace; font-size: 14px; line-height: 1.6; background: none; padding: 0; }
-    img { max-width: 100%; height: auto; border-radius: 8px; margin: 1.5em 0; }
-    .hljs-comment, .hljs-quote { color: #6a737d; }
-    .hljs-keyword, .hljs-selector-tag, .hljs-type { color: #d73a49; }
-    .hljs-string, .hljs-addition { color: #032f62; }
-    .hljs-number, .hljs-literal { color: #005cc5; }
-    .hljs-built_in, .hljs-title, .hljs-section { color: #6f42c1; }
-    .hljs-attr, .hljs-attribute { color: #005cc5; }
-    .hljs-variable, .hljs-template-variable { color: #e36209; }
-    .hljs-deletion { color: #b31d28; }
-    .fountain-body { font-family: "Courier New", Courier, monospace; font-size: 12pt; line-height: 1.5; }
-    .fountain-title-page { text-align: center; padding: 4em 0 3em; margin-bottom: 2em; border-bottom: 1px solid #d0d0d0; }
-    .fountain-title { font-size: 2rem; font-weight: 700; text-transform: uppercase; margin: 0 0 1em; }
-    .fountain-credit { font-size: 1rem; margin: 0 0 0.25em; color: #666; }
-    .fountain-author { font-size: 1rem; font-weight: 700; margin: 0 0 1em; }
-    .fountain-draft-date, .fountain-title-entry { font-size: 0.9rem; margin: 0 0 0.25em; color: #666; }
-    .fountain-scene-heading { font-weight: 700; text-transform: uppercase; margin-top: 2em; margin-bottom: 1em; font-size: 1em; }
-    .fountain-scene-number { float: right; font-weight: 400; }
-    .fountain-action { margin: 1em 0; }
-    .fountain-character { text-align: center; text-transform: uppercase; margin-top: 1em; margin-bottom: 0; font-weight: 700; }
-    .fountain-dialogue { max-width: 35ch; margin: 0 auto; }
-    .fountain-parenthetical { max-width: 25ch; margin: 0 auto; font-style: italic; }
-    .fountain-transition { text-align: right; text-transform: uppercase; margin: 1em 0; }
-    .fountain-centered { text-align: center; margin: 1em 0; }
-    .fountain-section { font-weight: 700; margin-top: 2em; margin-bottom: 1em; color: #666; }
-    .fountain-synopsis { font-style: italic; color: #999; margin: 0.5em 0; }
-    .fountain-note { font-style: italic; color: #999; padding: 0.5em 1em; background: #f5f5f5; border-radius: 6px; margin: 0.5em 0; }
-    .fountain-lyrics { font-style: italic; margin: 1em 0; }
-    .fountain-page-break { border: none; border-top: 1px solid #d0d0d0; margin: 2em 0; }
-    .fountain-dual-dialogue { display: flex; gap: 2em; margin-top: 1em; }
-    .fountain-dual-column { flex: 1; min-width: 0; }
-    .fountain-dual-column .fountain-character { text-align: center; }
-    .fountain-dual-column .fountain-dialogue { max-width: none; margin: 0; }
-    .code-block-wrapper button,
-    .code-lang-chip { display: none; }
-  </style>
-</head>
-<body>
-${bodyHtml}
-</body>
-</html>`;
-
     try {
+      const savePath = await save({
+        defaultPath: defaultName,
+        filters: [{ name: "HTML", extensions: ["html"] }],
+      });
+      if (!savePath) return;
+
+      await waitForMermaidDiagrams(el);
+
+      const themeAttr = document.documentElement.getAttribute("data-theme") || "light";
+      const computedStyles = getComputedStyle(document.documentElement);
+      const cssVars = EXPORT_CSS_VAR_NAMES
+        .map((name) => `${name}: ${computedStyles.getPropertyValue(name)};`)
+        .join("\n      ");
+
+      const bodyHtml = el.outerHTML;
+      const hasMath = el.querySelector(".katex") !== null;
+      const katexCss = hasMath
+        ? (await import("../lib/generated/katex-css-embedded")).katexCssEmbedded
+        : null;
+      const html = buildExportHtml({
+        title: fileName || "Exported Document",
+        themeAttr,
+        cssVars,
+        bodyHtml,
+        katexCss,
+      });
+
       await invoke("export_html_file", { path: savePath, content: html });
     } catch (err) {
       console.warn("[export] Failed to export HTML:", err);
+      toast("Couldn't export HTML", "error");
     }
-  }, [fileName]);
+  }, [fileName, toast]);
 
   return (
     <header

@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const css = fs.readFileSync(path.join(__dirname, "../src/app.css"), "utf8");
+const mermaidBlock = fs.readFileSync(path.join(__dirname, "../src/components/MermaidBlock.tsx"), "utf8");
 
 test("print css scopes themed output behind active print state", () => {
   assert.equal(
@@ -80,6 +81,42 @@ test("print CSS keeps the print handoff overlay scoped to active print state", (
   assert.ok(
     beforePrintBlock.includes("body[data-printing]::before"),
     "body[data-printing]::before overlay selector must exist outside @media print",
+  );
+});
+
+test("screen css lets mermaid diagrams keep intrinsic width", () => {
+  const printStart = css.indexOf("@media print");
+  const beforePrintBlock = css.slice(0, printStart);
+  const mermaidSvgRule = beforePrintBlock.match(/\.mermaid-diagram svg\s*\{[^}]+\}/);
+
+  assert.ok(mermaidSvgRule, "screen .mermaid-diagram svg rule must exist");
+  assert.equal(
+    mermaidSvgRule[0].includes("max-width:"),
+    false,
+    "screen mermaid svg rule should not cap width",
+  );
+  assert.ok(
+    mermaidSvgRule[0].includes("flex: 0 0 auto;"),
+    "screen mermaid svg rule should prevent flexbox shrinking",
+  );
+});
+
+test("markdown css styles strikethrough explicitly", () => {
+  const printStart = css.indexOf("@media print");
+  const beforePrintBlock = css.slice(0, printStart);
+
+  assert.ok(
+    beforePrintBlock.includes(".markdown-body del") &&
+      beforePrintBlock.includes(".markdown-body s") &&
+      beforePrintBlock.includes("text-decoration: line-through;"),
+    "screen markdown css should style strikethrough text explicitly",
+  );
+});
+
+test("mermaid config disables flowchart max-width on screen", () => {
+  assert.ok(
+    mermaidBlock.includes("flowchart: { useMaxWidth: false }"),
+    "MermaidBlock should disable flowchart max-width responsive shrinking",
   );
 });
 

@@ -883,7 +883,7 @@ mark.annotation-highlight-pink {
 }
 
 .mermaid-diagram svg {
-  max-width: 100%;
+  flex: 0 0 auto;
   height: auto;
 }
 
@@ -971,6 +971,14 @@ mark.annotation-highlight-pink {
   color: var(--accent);
   border-radius: 999px;
   letter-spacing: 0.02em;
+}
+
+/* ── Strikethrough ── */
+
+.markdown-body del,
+.markdown-body s {
+  text-decoration: line-through;
+  color: var(--text-secondary);
 }
 
 /* ── Footnotes ── */
