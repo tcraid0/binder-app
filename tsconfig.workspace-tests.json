@@ -14,6 +14,7 @@
   },
   "include": [
     "src/types/index.ts",
+    "src/components/MermaidBlock.tsx",
     "src/lib/paths.ts",
     "src/lib/frontmatter.ts",
     "src/lib/code-text.ts",

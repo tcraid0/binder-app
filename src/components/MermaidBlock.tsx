@@ -16,6 +16,19 @@ function getMermaid() {
   return mermaidPromise;
 }
 
+export async function waitForDocumentFontsReady(doc: Document = document): Promise<void> {
+  const fontSet = "fonts" in doc ? doc.fonts : undefined;
+  if (!fontSet?.ready) {
+    return;
+  }
+
+  try {
+    await fontSet.ready;
+  } catch {
+    // Proceed with fallback metrics if the browser rejects font readiness.
+  }
+}
+
 function getCurrentThemeName() {
   return document.documentElement.getAttribute("data-theme") || "light";
 }
@@ -118,7 +131,9 @@ export const MermaidBlock = memo(function MermaidBlock({ chart }: MermaidBlockPr
     const { configKey, mermaidConfig } = getMermaidThemeConfig(themeName);
 
     getMermaid()
-      .then(({ default: mermaid }) => {
+      .then(async ({ default: mermaid }) => {
+        if (cancelled) return;
+        await waitForDocumentFontsReady();
         if (cancelled) return;
 
         if (lastInitializedConfig !== configKey) {
